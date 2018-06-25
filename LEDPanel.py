@@ -30,7 +30,7 @@ class LEDPanel(wx.Frame):
 
     def adjust_menu(self):
         super(LEDPanel, self).SetWindowStyle(wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
-        super(LEDPanel, self).SetSize((540,180))
+        super(LEDPanel, self).SetSize((545,185))
         menubar = wx.MenuBar()
 
         config_menu = wx.Menu()
@@ -54,7 +54,7 @@ class LEDPanel(wx.Frame):
 
     def adjust_jornada(self):
         jornadaL = wx.BoxSizer(wx.HORIZONTAL)
-        x = 130
+        x = 135
         sizeL = (x,17)
         style=wx.ALIGN_CENTRE
         
@@ -74,10 +74,10 @@ class LEDPanel(wx.Frame):
         
         size = (x,50)
 
-        self.entrada = gizmos.LEDNumberCtrl(self, -1, size=size)
-        self.almoco_start = gizmos.LEDNumberCtrl(self, -1, size=size)
-        self.almoco_end = gizmos.LEDNumberCtrl(self, -1, size=size)
-        self.saida = gizmos.LEDNumberCtrl(self, -1, size=size)
+        self.entrada = gizmos.LEDNumberCtrl(self, -1, size=size, style=gizmos.LED_ALIGN_CENTER | gizmos.LED_DRAW_FADED)
+        self.almoco_start = gizmos.LEDNumberCtrl(self, -1, size=size, style=gizmos.LED_ALIGN_CENTER | gizmos.LED_DRAW_FADED)
+        self.almoco_end = gizmos.LEDNumberCtrl(self, -1, size=size, style=gizmos.LED_ALIGN_CENTER | gizmos.LED_DRAW_FADED)
+        self.saida = gizmos.LEDNumberCtrl(self, -1, size=size, style=gizmos.LED_ALIGN_CENTER | gizmos.LED_DRAW_FADED)
 
         jornada = wx.BoxSizer(wx.HORIZONTAL)
         jornada.Add(self.entrada, 1)
