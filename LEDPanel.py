@@ -2,6 +2,7 @@ import wx, json, re
 from datetime import datetime, date
 from enum import Enum
 import wx.gizmos as gizmos
+from PontoCalculator import Jornada
 
 class LEDPanel(wx.Frame):
     class SaidaStates(Enum):
@@ -12,6 +13,20 @@ class LEDPanel(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(LEDPanel, self).__init__(*args, **kwargs)
         self.InitUI()
+
+    def InitUI(self):
+        self.adjust_menu()
+        jornadaL, jornada = self.adjust_jornada()
+        self.countdown = gizmos.LEDNumberCtrl(self, -1, style=gizmos.LED_ALIGN_CENTER | gizmos.LED_DRAW_FADED)
+
+        lines = wx.BoxSizer(wx.VERTICAL)
+        lines.Add(jornadaL, 1, wx.ALIGN_CENTER)
+        lines.Add(jornada, 1, wx.ALIGN_CENTER)
+        lines.Add(self.countdown, 1, wx.EXPAND)
+        self.SetSizer(lines)
+        
+        self.load_info()
+        self.adjust_events()
 
     def adjust_menu(self):
         super(LEDPanel, self).SetWindowStyle(wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
@@ -79,22 +94,35 @@ class LEDPanel(wx.Frame):
             jsontxt = ''.join([x.strip() for x in f.readlines()])
             f.close()
             self.persistent_info = json.loads(jsontxt)
-            self.entrada.SetValue(self.persistent_info['entrada'])
-            self.almoco_start.SetValue("12:00")
-            self.almoco_end.SetValue("13:30")
-            self.saida.SetValue("22:20")
-            self.OnTimer(None)
         except Exception:
             f = open('.\\config.json','w')
             self.persistent_info['entrada'] = '08:00'
             self.persistent_info['turno1'] = '04:00'
             self.persistent_info['almoco'] = '01:30'
-            self.persistent_info['gordura'] = '08:00'
+            self.persistent_info['gordura'] = '00:18'
             f.write(json.dumps(self.persistent_info))
             f.close()
             self.load_info()
             pass
+
+        self.update_jornada()
         
+    def update_jornada(self):
+        self.jornada = Jornada(
+            entrada=self.persistent_info['entrada'],
+            turno1=self.persistent_info['turno1'],
+            almoco=self.persistent_info['almoco'],
+            gordura=self.persistent_info['gordura']
+        )
+
+        self.current_jornada = self.jornada.calc_jornada()['jornada']
+
+        self.entrada.SetValue(self.current_jornada['entrada'])
+        self.almoco_start.SetValue(self.current_jornada['almoco_start'])
+        self.almoco_end.SetValue(self.current_jornada['almoco_end'])
+        self.saida.SetValue(self.current_jornada['saida']['normal'])
+        self.OnTimer(None)
+
     def adjust_events(self):
         self.timer = wx.Timer(self)
         self.timer.Start(1000)
@@ -102,20 +130,6 @@ class LEDPanel(wx.Frame):
         self.entrada.Bind(wx.EVT_LEFT_DCLICK, self.setEntrada1)
         self.saida.Bind(wx.EVT_LEFT_UP, self.changeSaida)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
-
-    def InitUI(self):
-        self.adjust_menu()
-        jornadaL, jornada = self.adjust_jornada()
-        self.countdown = gizmos.LEDNumberCtrl(self, -1, style=gizmos.LED_ALIGN_CENTER | gizmos.LED_DRAW_FADED)
-
-        lines = wx.BoxSizer(wx.VERTICAL)
-        lines.Add(jornadaL, 1, wx.ALIGN_CENTER)
-        lines.Add(jornada, 1, wx.ALIGN_CENTER)
-        lines.Add(self.countdown, 1, wx.EXPAND)
-        self.SetSizer(lines)
-        
-        self.load_info()
-        self.adjust_events()
 
     def OnTimer(self, evt):
         now = datetime.now().time()
@@ -141,21 +155,21 @@ class LEDPanel(wx.Frame):
         if dlg.ShowModal() == wx.ID_OK:
             p = '^[0-2][0-9]:[0-6][0-9]$'
             if self._checkStr(dlg.GetValue(), p):
-                self.persistent_info['entrada']= dlg.GetValue()
-                self.entrada.SetValue(self.persistent_info['entrada'])
+                self.persistent_info['entrada'] = dlg.GetValue()
+                self.update_jornada()
             else: wx.MessageBox("Valor errado!", 'Info', wx.OK | wx.ICON_INFORMATION)
 
     def changeSaida(self, e):
         saidaL = self.saidaL.Label
         if saidaL == self.SaidaStates.NORMAL.value:
             self.saidaL.SetLabel(self.SaidaStates.MIN.value)
-            self.saida.SetValue("09:09")
+            self.saida.SetValue(self.current_jornada['saida']['limite_inferior'])
         elif saidaL == self.SaidaStates.MIN.value:
             self.saidaL.SetLabel(self.SaidaStates.MAX.value)
-            self.saida.SetValue("11:11")
+            self.saida.SetValue(self.current_jornada['saida']['limite_superior'])
         else:
             self.saidaL.SetLabel(self.SaidaStates.NORMAL.value)
-            self.saida.SetValue("10:10")
+            self.saida.SetValue(self.current_jornada['saida']['normal'])
 
     def setGordura(self, e):
         dlg = wx.TextEntryDialog(self, 'Entre com o valor de gordura no formato mm:ss','Ajustar Gordura de Saída')
@@ -164,7 +178,7 @@ class LEDPanel(wx.Frame):
             p = '^[0-6][0-9]:[0-6][0-9]$'
             if self._checkStr(dlg.GetValue(), p):
                 self.persistent_info['gordura']= dlg.GetValue()
-                self.entrada.SetValue(self.persistent_info['gordura'])
+                self.update_jornada()
             else: wx.MessageBox("Valor errado!", 'Info', wx.OK | wx.ICON_EXCLAMATION)
 
     def setTurno1(self, e):
@@ -174,7 +188,7 @@ class LEDPanel(wx.Frame):
             p = '^0[0-9]:[0-6][0-9]$'
             if self._checkStr(dlg.GetValue(), p):
                 self.persistent_info['turno1']= dlg.GetValue()
-                self.entrada.SetValue(self.persistent_info['turno1'])
+                self.update_jornada()
             else: wx.MessageBox("Valor errado!", 'Info', wx.OK | wx.ICON_EXCLAMATION)
 
     def setAlmoco(self, e):
@@ -184,7 +198,7 @@ class LEDPanel(wx.Frame):
             p = '^0[0-9]:[0-6][0-9]$'
             if self._checkStr(dlg.GetValue(), p):
                 self.persistent_info['almoco']= dlg.GetValue()
-                self.entrada.SetValue(self.persistent_info['almoco'])
+                self.update_jornada()
             else: wx.MessageBox("Valor errado!", 'Info', wx.OK | wx.ICON_EXCLAMATION)
 
     def displayAjuda(self, e):
