@@ -36,7 +36,7 @@ class Jornada():
 
     def compensar_excesso(self, entrada, excesso):
         almoco_start, almoco_end = self._calcular_almoco(self._d(entrada))
-        saida = almoco_end + (self.jornada - self.turno1) - self.gordura - (self.limite + self._d('00:01'))
+        saida = almoco_end + (self.jornada - self.turno1) - (self.limite + self._d('00:01'))
         if self._d(excesso) > (self.limite + self._d('00:01')):
             saida -= self._d(excesso) - (self.limite + self._d('00:01'))
         return {

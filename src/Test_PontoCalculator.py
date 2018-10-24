@@ -33,8 +33,8 @@ class TestJornada(unittest.TestCase):
         self.assertEqual(str(Jornada().compensar_ausencia('08:00', '00:12')),"{'jornada': {'entrada': '08:00', 'almoco_start': '12:00', 'almoco_end': '13:30', 'saida': '18:50'}}")
 
     def test_compensar_excesso(self):
-        self.assertEqual(str(Jornada().compensar_excesso('08:00', '00:09')),"{'jornada': {'entrada': '08:00', 'almoco_start': '12:00', 'almoco_end': '13:30', 'saida': '17:51'}}")
-        self.assertEqual(str(Jornada().compensar_excesso('08:00', '00:12')),"{'jornada': {'entrada': '08:00', 'almoco_start': '12:00', 'almoco_end': '13:30', 'saida': '17:50'}}")
+        self.assertEqual(str(Jornada().compensar_excesso('08:00', '00:09')),"{'jornada': {'entrada': '08:00', 'almoco_start': '12:00', 'almoco_end': '13:30', 'saida': '18:09'}}")
+        self.assertEqual(str(Jornada().compensar_excesso('08:00', '00:12')),"{'jornada': {'entrada': '08:00', 'almoco_start': '12:00', 'almoco_end': '13:30', 'saida': '18:08'}}")
 
 if __name__ == '__main__':
     unittest.main()
